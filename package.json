@@ -1,0 +1,11 @@
+{
+  "name": "@hexlet/code",
+  "version": "1.0.0",
+  "description": "[![Actions Status](https://github.com/Reyka141/frontend-project-11/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/Reyka141/frontend-project-11/actions)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Andrii Veduta",
+  "license": "ISC"
+}
