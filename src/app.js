@@ -25,11 +25,11 @@ export default () => {
   }).then((t) => {
     yup.setLocale({
       mixed: {
-        required: t('errorMessage.required'),
-        notOneOf: t('errorMessage.urlNotOneOf'),
+        required: 'errorMessage.required',
+        notOneOf: 'errorMessage.urlNotOneOf',
       },
       string: {
-        url: t('errorMessage.url'),
+        url: 'errorMessage.url',
       },
     });
     const watchedState = watch(elements, state, t);
