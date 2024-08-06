@@ -1,5 +1,7 @@
 import * as yup from 'yup';
+import i18next from 'i18next';
 import watch from './view.js';
+import resources from './locales/index.js';
 
 export default () => {
   const elements = {
@@ -7,7 +9,7 @@ export default () => {
     input: document.querySelector('#url-input'),
     feedback: document.querySelector('.feedback'),
   };
-
+  const defaultLang = 'ru';
   const state = {
     status: 'filling',
     valid: false,
@@ -15,31 +17,47 @@ export default () => {
     loadedFeeds: [],
   };
 
-  const watchedState = watch(elements, state);
-
-  elements.form?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const schema = yup.object().shape({
-      url: yup.string()
-        .required()
-        .url('Ссылка должна быть валидным URL')
-        .notOneOf(watchedState.loadedFeeds, 'RSS уже существует'),
+  const i18n = i18next.createInstance();
+  i18n.init({
+    lng: defaultLang,
+    debug: false,
+    resources,
+  }).then((t) => {
+    yup.setLocale({
+      mixed: {
+        required: t('errorMessage.required'),
+        notOneOf: t('errorMessage.urlNotOneOf'),
+      },
+      string: {
+        url: t('errorMessage.url'),
+      },
     });
-    const formData = new FormData(e.target);
-    const newRss = Object.fromEntries(formData);
-    schema.validate(newRss, { abortEarly: false })
-      .then(() => {
-        watchedState.errors = [];
-        watchedState.loadedFeeds.push(newRss.url);
-        watchedState.valid = true;
-      })
-      .catch((err) => {
-        const validateError = err.inner.reduce((acc, cur) => {
-          const { path, message } = cur;
-          const errorData = acc[path] || [];
-          return { ...acc, [path]: [...errorData, message] };
-        }, {});
-        watchedState.errors = validateError;
+    const watchedState = watch(elements, state, t);
+
+    elements.form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const schema = yup.object().shape({
+        url: yup.string()
+          .required()
+          .url()
+          .notOneOf(watchedState.loadedFeeds),
       });
+      const formData = new FormData(e.target);
+      const newRss = Object.fromEntries(formData);
+      schema.validate(newRss, { abortEarly: false })
+        .then(() => {
+          watchedState.errors = [];
+          watchedState.loadedFeeds.push(newRss.url);
+          watchedState.valid = true;
+        })
+        .catch((err) => {
+          const validateError = err.inner.reduce((acc, cur) => {
+            const { path, message } = cur;
+            const errorData = acc[path] || [];
+            return { ...acc, [path]: [...errorData, message] };
+          }, {});
+          watchedState.errors = validateError;
+        });
+    });
   });
 };
