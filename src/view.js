@@ -11,7 +11,7 @@ export default (elements, state, i18n) => {
     } else {
       input.classList.add('is-invalid');
       feedback.classList.add('text-danger');
-      feedback.textContent = state.errors.url;
+      feedback.textContent = i18n(state.errors.url);
     }
   };
 
