@@ -6,5 +6,10 @@ export default {
       urlNotOneOf: 'RSS уже существует',
       required: 'Это обязательное поле',
     },
+    feeds: 'Фиды',
+    posts: {
+      title: 'Посты',
+      button: 'Просмотр',
+    },
   },
 };
