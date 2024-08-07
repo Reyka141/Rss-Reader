@@ -1,7 +1,10 @@
 import onChange from 'on-change';
 
 export default (elements, state, i18n) => {
-  const { input, feedback, form } = elements;
+  const {
+    input, feedback, form,
+    button,
+  } = elements;
   const handleErrors = () => {
     if (!state.errors.url) {
       input.classList.remove('is-invalid');
@@ -20,9 +23,25 @@ export default (elements, state, i18n) => {
     input.focus();
   };
 
-  const watchedState = onChange(state, (path) => {
+  const formSending = () => {
+    input.disabled = true;
+    button.disabled = true;
+  };
+
+  const formFilling = () => {
+    input.disabled = false;
+    button.disabled = false;
+  };
+
+  const watchedState = onChange(state, (path, value) => {
     switch (path) {
-      case 'form.status':
+      case 'status':
+        if (value === 'sending') {
+          formSending();
+        }
+        if (value === 'filling') {
+          formFilling();
+        }
         break;
       case 'errors':
         handleErrors();
