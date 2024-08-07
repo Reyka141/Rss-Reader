@@ -1,5 +1,6 @@
 import * as yup from 'yup';
 import i18next from 'i18next';
+import axios from 'axios';
 import watch from './view.js';
 import resources from './locales/index.js';
 
@@ -44,12 +45,17 @@ export default () => {
       });
       const formData = new FormData(e.target);
       const newRss = Object.fromEntries(formData);
+      console.log(newRss.url);
       schema.validate(newRss, { abortEarly: false })
-        .then(() => {
+        .then(() => axios.get(`/get?disableCache=true&url=${newRss.url}`))
+        .then((response) => {
+          console.log(response);
           watchedState.errors = [];
           watchedState.loadedFeeds.push(newRss.url);
           watchedState.valid = true;
+          // return new DOMParser();
         })
+        .then((value) => console.log(value))
         .catch((err) => {
           const validateError = err.inner.reduce((acc, cur) => {
             const { path, message } = cur;
