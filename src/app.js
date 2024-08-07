@@ -37,6 +37,8 @@ export default () => {
     input: document.querySelector('#url-input'),
     feedback: document.querySelector('.feedback'),
     button: document.querySelector('[type=submit]'),
+    posts: document.querySelector('.posts'),
+    feeds: document.querySelector('.feeds'),
   };
 
   const defaultLang = 'ru';
@@ -84,6 +86,7 @@ export default () => {
         })
         .then((response) => {
           watchedState.contents = parserFn(response);
+          console.log(watchedState.contents);
           watchedState.status = 'filling';
           watchedState.errors = [];
           watchedState.loadedFeeds.push(newRss.url);
