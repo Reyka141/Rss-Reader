@@ -18,46 +18,71 @@ export default (elements, state, i18n) => {
     return titleDiv;
   };
 
+  const createPosts = (items) => {
+    const arrOFList = items.map((item) => {
+      const li = document.createElement('li');
+      li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+
+      const a = document.createElement('a');
+      a.href = item.link;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.classList.add('fw-bold');
+      a.setAttribute('data-id', item.id);
+      a.textContent = item.title;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.classList.add('btn', 'btn-outline-primary', 'btn-sm');
+      btn.setAttribute('data-id', item.id);
+      btn.setAttribute('data-bs-toggle', 'modal');
+      btn.setAttribute('data-bs-target', '#modal');
+      btn.textContent = i18n('posts.button');
+
+      li.append(a, btn);
+      return li;
+    });
+    return arrOFList;
+  };
+
+  const createFeeds = (data) => {
+    const li = document.createElement('li');
+    li.classList.add('list-group-item', 'border-0', 'border-end-0');
+
+    const liTitle = document.createElement('h3');
+    liTitle.classList.add('h6', 'm-0');
+    liTitle.textContent = data.title;
+
+    const liDecription = document.createElement('p');
+    liDecription.classList.add('m-0', 'small', 'text-black-50');
+    liDecription.textContent = data.description;
+
+    li.append(liTitle, liDecription);
+    return li;
+  };
+
   const handlePosts = (container) => {
     const localContainer = container;
     localContainer.innerHTML = '';
 
     const wrapper = document.createElement('div');
     wrapper.classList.add('card', 'border-0');
+
     const body = createTitles('posts.title');
+    wrapper.append(body);
 
-    const createPost = (items) => {
-      const ul = document.createElement('ul');
-      ul.classList.add('list-group', 'border-0', 'rounded-0');
-      items.forEach((item) => {
-        const li = document.createElement('li');
-        li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+    const ul = document.createElement('ul');
+    ul.classList.add('list-group', 'border-0', 'rounded-0');
 
-        const a = document.createElement('a');
-        a.href = item.link;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.classList.add('fw-bold');
-        a.setAttribute('data-id', item.id);
-        a.textContent = item.title;
+    state.contents.forEach((content) => {
+      const postContent = createPosts(content.items);
+      postContent.forEach((post) => ul.append(post));
+    });
 
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.classList.add('btn', 'btn-outline-primary', 'btn-sm');
-        btn.setAttribute('data-id', item.id);
-        btn.setAttribute('data-bs-toggle', 'modal');
-        btn.setAttribute('data-bs-target', '#modal');
-        btn.textContent = i18n('posts.button');
-
-        li.append(a, btn);
-        ul.append(li);
-      });
-      return ul;
-    };
-    const items = createPost(state.contents.items);
-    wrapper.append(body, items);
+    wrapper.append(ul);
     localContainer.append(wrapper);
   };
+
   const handleFeeds = (container) => {
     const localContainer = container;
     localContainer.innerHTML = '';
@@ -70,19 +95,10 @@ export default (elements, state, i18n) => {
     const ul = document.createElement('ul');
     ul.classList.add('list-group', 'border-0', 'rounded-0');
 
-    const li = document.createElement('li');
-    li.classList.add('list-group-item', 'border-0', 'border-end-0');
-
-    const liTitle = document.createElement('h3');
-    liTitle.classList.add('h6', 'm-0');
-    liTitle.textContent = state.contents.title;
-
-    const liDecription = document.createElement('p');
-    liDecription.classList.add('m-0', 'small', 'text-black-50');
-    liDecription.textContent = state.contents.description;
-
-    li.append(liTitle, liDecription);
-    ul.append(li);
+    state.contents.forEach((content) => {
+      const feedsContent = createFeeds(content);
+      ul.append(feedsContent);
+    });
 
     wrapper.append(body, ul);
     localContainer.append(wrapper);
@@ -136,6 +152,7 @@ export default (elements, state, i18n) => {
       case 'contents':
         handlePosts(posts);
         handleFeeds(feeds);
+        formReset();
         break;
       default:
         break;
