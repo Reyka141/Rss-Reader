@@ -48,7 +48,7 @@ export default () => {
     valid: false,
     errors: [],
     loadedFeeds: [],
-    contents: {},
+    contents: [],
   };
 
   const i18n = i18next.createInstance();
@@ -70,35 +70,38 @@ export default () => {
 
     elements.form?.addEventListener('submit', (e) => {
       e.preventDefault();
+
       const schema = yup.object().shape({
         url: yup.string()
           .required()
           .url()
           .notOneOf(watchedState.loadedFeeds),
       });
+
       const formData = new FormData(e.target);
       const newRss = Object.fromEntries(formData);
-      console.log(newRss.url);
+
       schema.validate(newRss, { abortEarly: false })
         .then(() => {
           watchedState.status = 'sending';
           return axios.get(routes.rssPath(newRss.url));
         })
         .then((response) => {
-          watchedState.contents = parserFn(response);
-          console.log(watchedState.contents);
+          if (response.data.status.http_code === 200) {
+            watchedState.contents.unshift(parserFn(response));
+            watchedState.errors = [];
+            watchedState.loadedFeeds.push(newRss.url);
+            watchedState.valid = true;
+          } else {
+            const error = { url: 'errorMessage.urlInValid' };
+            watchedState.errors = error;
+          }
           watchedState.status = 'filling';
-          watchedState.errors = [];
-          watchedState.loadedFeeds.push(newRss.url);
-          watchedState.valid = true;
-          // return new DOMParser();
         })
-        .then((value) => console.log(value))
         .catch((err) => {
           const validateError = err.inner.reduce((acc, cur) => {
             const { path, message } = cur;
-            const errorData = acc[path] || [];
-            return { ...acc, [path]: [...errorData, message] };
+            return { ...acc, [path]: message };
           }, {});
           watchedState.errors = validateError;
         });
