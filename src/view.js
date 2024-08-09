@@ -116,11 +116,6 @@ export default (elements, state, i18n) => {
     }
   };
 
-  const addNewPosts = (list) => {
-    const newPosts = createPosts(state.newPosts);
-    newPosts.forEach((post) => list.prepend(post));
-  };
-
   const formReset = () => {
     form.reset();
     input.focus();
@@ -164,9 +159,6 @@ export default (elements, state, i18n) => {
       case 'contents.feeds':
         handleFeeds(feeds);
         formReset();
-        break;
-      case 'newPosts':
-        addNewPosts(postEl.postList);
         break;
       default:
         break;
