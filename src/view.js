@@ -4,8 +4,10 @@ export default (elements, state, i18n) => {
   const {
     input, feedback, form,
     button, posts, feeds,
-    postEl,
   } = elements;
+
+  const { modalTitle, modalBtn, modalBody } = elements.modalElements;
+  const { postVisited } = state.contents;
 
   const createTitles = (textCode) => {
     const titleDiv = document.createElement('div');
@@ -28,7 +30,11 @@ export default (elements, state, i18n) => {
       a.href = item.link;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
-      a.classList.add('fw-bold');
+      if (postVisited.includes(item.id)) {
+        a.classList.add('fw-normal', 'link-secondary');
+      } else {
+        a.classList.add('fw-bold');
+      }
       a.setAttribute('data-id', item.id);
       a.textContent = item.title;
 
@@ -39,6 +45,17 @@ export default (elements, state, i18n) => {
       btn.setAttribute('data-bs-toggle', 'modal');
       btn.setAttribute('data-bs-target', '#modal');
       btn.textContent = i18n('posts.button');
+      btn.addEventListener('click', () => {
+        postVisited.push(item.id);
+        // eslint-disable-next-line no-use-before-define
+        watchedState.modalIcon.title = item.title;
+        // eslint-disable-next-line no-use-before-define
+        watchedState.modalIcon.description = item.description;
+        // eslint-disable-next-line no-use-before-define
+        watchedState.modalIcon.href = item.link;
+        // eslint-disable-next-line no-use-before-define
+        watchedState.modalIcon.idPost = item.id;
+      });
 
       li.append(a, btn);
       return li;
@@ -116,6 +133,18 @@ export default (elements, state, i18n) => {
     }
   };
 
+  const handleModal = () => {
+    const {
+      title, description, href, idPost,
+    } = state.modalIcon;
+    const postEl = document.querySelector(`[data-id='${idPost}']`);
+    postEl.classList.remove('fw-bold');
+    postEl.classList.add('fw-normal', 'link-secondary');
+    modalTitle.textContent = title;
+    modalBody.textContent = description;
+    modalBtn.href = href;
+  };
+
   const formReset = () => {
     form.reset();
     input.focus();
@@ -129,10 +158,6 @@ export default (elements, state, i18n) => {
   const formFilling = () => {
     input.disabled = false;
     button.disabled = false;
-  };
-
-  const initialElements = () => {
-    postEl.postList = document.querySelector('.posts ul');
   };
 
   const watchedState = onChange(state, (path, value) => {
@@ -154,11 +179,13 @@ export default (elements, state, i18n) => {
         break;
       case 'contents.posts':
         handlePosts(posts);
-        initialElements();
         break;
       case 'contents.feeds':
         handleFeeds(feeds);
         formReset();
+        break;
+      case 'modalIcon.idPost':
+        handleModal();
         break;
       default:
         break;
