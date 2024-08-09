@@ -6,6 +6,7 @@ export default {
       urlInValid: 'Ресурс не содержит валидный RSS',
       urlNotOneOf: 'RSS уже существует',
       required: 'Это обязательное поле',
+      timeout: 'Ошибка сети',
     },
     feeds: 'Фиды',
     posts: {
