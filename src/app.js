@@ -64,7 +64,6 @@ export default () => {
       feeds: [],
       posts: [],
     },
-    newPosts: [],
   };
 
   const i18n = i18next.createInstance();
