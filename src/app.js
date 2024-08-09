@@ -46,8 +46,12 @@ export default () => {
     feedback: document.querySelector('.feedback'),
     button: document.querySelector('[type=submit]'),
     posts: document.querySelector('.posts'),
-    postEl: {},
     feeds: document.querySelector('.feeds'),
+    modalElements: {
+      modalTitle: document.querySelector('.modal-title'),
+      modalBody: document.querySelector('.modal-body'),
+      modalBtn: document.querySelector('.full-article'),
+    },
   };
 
   const defaultLang = 'ru';
@@ -60,6 +64,13 @@ export default () => {
     contents: {
       feeds: [],
       posts: [],
+      postVisited: [],
+    },
+    modalIcon: {
+      title: '',
+      description: '',
+      href: '',
+      idPost: '',
     },
   };
 
@@ -128,7 +139,6 @@ export default () => {
           });
         })
         .then((response) => {
-          console.log(response);
           if (response.data.status.http_code === 200 && (response.data.status.content_type.includes('xml') || response.data.status.content_type.includes('rss'))) {
             const doc = parserFn(response);
             console.log(response);
