@@ -19,7 +19,6 @@ const createFeeds = (doc) => {
   const obj = {
     title: doc.querySelector('title').textContent,
     description: doc.querySelector('description').textContent,
-    lastBuildDate: doc.querySelector('lastBuildDate').textContent,
   };
   return obj;
 };
@@ -30,10 +29,8 @@ const createPosts = (doc, idFn = '') => {
     const id = idFn === '' ? idFn : idFn();
     const description = item.querySelector('description').textContent;
     const link = item.querySelector('link').textContent;
-    const pubDate = item.querySelector('pubDate').textContent;
     return {
       id,
-      pubDate,
       title,
       description,
       link,
@@ -58,7 +55,7 @@ export default () => {
   const state = {
     status: 'filling', // 'sending', 'sent', 'error'
     valid: false,
-    errors: [],
+    errors: '',
     loadedFeeds: [],
     contents: {
       feeds: [],
@@ -126,11 +123,15 @@ export default () => {
       schema.validate(newRss, { abortEarly: false })
         .then(() => {
           watchedState.status = 'sending';
-          return axios.get(routes.rssPath(newRss.url));
+          return axios.get(routes.rssPath(newRss.url), {
+            timeout: 10000,
+          });
         })
         .then((response) => {
-          if (response.data.status.http_code === 200) {
+          console.log(response);
+          if (response.data.status.http_code === 200 && (response.data.status.content_type.includes('xml') || response.data.status.content_type.includes('rss'))) {
             const doc = parserFn(response);
+            console.log(response);
             watchedState.contents.feeds.unshift(createFeeds(doc));
             watchedState.contents.posts = [
               ...createPosts(doc, uniqueId),
@@ -140,17 +141,21 @@ export default () => {
             watchedState.loadedFeeds.push(newRss.url);
             watchedState.valid = true;
           } else {
-            const error = { url: 'errorMessage.urlInValid' };
+            const error = 'errorMessage.urlInValid';
             watchedState.errors = error;
           }
           watchedState.status = 'filling';
         })
         .catch((err) => {
-          const validateError = err.inner.reduce((acc, cur) => {
-            const { path, message } = cur;
-            return { ...acc, [path]: message };
-          }, {});
-          watchedState.errors = validateError;
+          if (err.message === 'timeout of 10000ms exceeded') {
+            watchedState.errors = 'errorMessage.timeout';
+          } else {
+            console.log(err);
+            const { message } = err;
+            console.log(message);
+            watchedState.errors = message;
+          }
+          watchedState.status = 'filling';
         });
     });
   });
