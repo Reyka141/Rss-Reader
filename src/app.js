@@ -12,23 +12,34 @@ const routes = {
 const parserFn = (response) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(response.data.contents, 'application/xml');
+  return doc;
+};
+
+const createFeeds = (doc) => {
+  const obj = {
+    title: doc.querySelector('title').textContent,
+    description: doc.querySelector('description').textContent,
+    lastBuildDate: doc.querySelector('lastBuildDate').textContent,
+  };
+  return obj;
+};
+
+const createPosts = (doc, idFn = '') => {
   const items = [...doc.querySelectorAll('item')].map((item) => {
-    const id = uniqueId();
     const title = item.querySelector('title').textContent;
+    const id = idFn === '' ? idFn : idFn();
     const description = item.querySelector('description').textContent;
     const link = item.querySelector('link').textContent;
+    const pubDate = item.querySelector('pubDate').textContent;
     return {
       id,
+      pubDate,
       title,
       description,
       link,
     };
   });
-  return {
-    title: doc.querySelector('title').textContent,
-    description: doc.querySelector('description').textContent,
-    items,
-  };
+  return items;
 };
 
 export default () => {
@@ -38,6 +49,7 @@ export default () => {
     feedback: document.querySelector('.feedback'),
     button: document.querySelector('[type=submit]'),
     posts: document.querySelector('.posts'),
+    postEl: {},
     feeds: document.querySelector('.feeds'),
   };
 
@@ -48,7 +60,11 @@ export default () => {
     valid: false,
     errors: [],
     loadedFeeds: [],
-    contents: [],
+    contents: {
+      feeds: [],
+      posts: [],
+    },
+    newPosts: [],
   };
 
   const i18n = i18next.createInstance();
@@ -67,6 +83,33 @@ export default () => {
       },
     });
     const watchedState = watch(elements, state, t);
+    const setTime = () => {
+      const timerId = setTimeout(() => {
+        const arr = watchedState.loadedFeeds.map((url) => axios.get(routes.rssPath(url)));
+        Promise.all(arr).then((data) => {
+          const idLists = watchedState.contents.posts.map(({ title }) => title);
+          const items = data
+            .flatMap((item) => {
+              const doc = parserFn(item);
+              const arrOfPosts = createPosts(doc);
+              return arrOfPosts;
+            })
+            .filter((item) => !idLists.includes(item.title))
+            .map((item) => {
+              const id = uniqueId();
+              return { ...item, id };
+            });
+          if (items.length > 0) {
+            watchedState.contents.posts = [...items, ...watchedState.contents.posts];
+          }
+        })
+          .then(() => {
+            setTime();
+          })
+          .catch(() => clearInterval(timerId));
+      }, 5000);
+    };
+    setTime();
 
     elements.form?.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -88,7 +131,12 @@ export default () => {
         })
         .then((response) => {
           if (response.data.status.http_code === 200) {
-            watchedState.contents.unshift(parserFn(response));
+            const doc = parserFn(response);
+            watchedState.contents.feeds.unshift(createFeeds(doc));
+            watchedState.contents.posts = [
+              ...createPosts(doc, uniqueId),
+              ...watchedState.contents.posts,
+            ];
             watchedState.errors = [];
             watchedState.loadedFeeds.push(newRss.url);
             watchedState.valid = true;
