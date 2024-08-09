@@ -4,6 +4,7 @@ export default (elements, state, i18n) => {
   const {
     input, feedback, form,
     button, posts, feeds,
+    postEl,
   } = elements;
 
   const createTitles = (textCode) => {
@@ -74,10 +75,8 @@ export default (elements, state, i18n) => {
     const ul = document.createElement('ul');
     ul.classList.add('list-group', 'border-0', 'rounded-0');
 
-    state.contents.forEach((content) => {
-      const postContent = createPosts(content.items);
-      postContent.forEach((post) => ul.append(post));
-    });
+    const postContent = createPosts(state.contents.posts);
+    postContent.forEach((post) => ul.append(post));
 
     wrapper.append(ul);
     localContainer.append(wrapper);
@@ -95,7 +94,7 @@ export default (elements, state, i18n) => {
     const ul = document.createElement('ul');
     ul.classList.add('list-group', 'border-0', 'rounded-0');
 
-    state.contents.forEach((content) => {
+    state.contents.feeds.forEach((content) => {
       const feedsContent = createFeeds(content);
       ul.append(feedsContent);
     });
@@ -117,6 +116,11 @@ export default (elements, state, i18n) => {
     }
   };
 
+  const addNewPosts = (list) => {
+    const newPosts = createPosts(state.newPosts);
+    newPosts.forEach((post) => list.prepend(post));
+  };
+
   const formReset = () => {
     form.reset();
     input.focus();
@@ -130,6 +134,10 @@ export default (elements, state, i18n) => {
   const formFilling = () => {
     input.disabled = false;
     button.disabled = false;
+  };
+
+  const initialElements = () => {
+    postEl.postList = document.querySelector('.posts ul');
   };
 
   const watchedState = onChange(state, (path, value) => {
@@ -149,10 +157,16 @@ export default (elements, state, i18n) => {
         handleErrors();
         formReset();
         break;
-      case 'contents':
+      case 'contents.posts':
         handlePosts(posts);
+        initialElements();
+        break;
+      case 'contents.feeds':
         handleFeeds(feeds);
         formReset();
+        break;
+      case 'newPosts':
+        addNewPosts(postEl.postList);
         break;
       default:
         break;
