@@ -43,6 +43,7 @@ export default () => {
   const elements = {
     form: document.querySelector('.rss-form'),
     input: document.querySelector('#url-input'),
+    btnSubmit: document.querySelector('[type="submit"]'),
     feedback: document.querySelector('.feedback'),
     button: document.querySelector('[type=submit]'),
     posts: document.querySelector('.posts'),
@@ -118,7 +119,7 @@ export default () => {
     };
     setTime();
 
-    elements.form?.addEventListener('submit', (e) => {
+    elements.btnSubmit.addEventListener('click', (e) => {
       e.preventDefault();
 
       const schema = yup.object().shape({
@@ -128,7 +129,7 @@ export default () => {
           .notOneOf(watchedState.loadedFeeds),
       });
 
-      const formData = new FormData(e.target);
+      const formData = new FormData(elements.form);
       const newRss = Object.fromEntries(formData);
 
       schema.validate(newRss, { abortEarly: false })
@@ -141,7 +142,6 @@ export default () => {
         .then((response) => {
           if (response.data.status.http_code === 200 && (response.data.status.content_type.includes('xml') || response.data.status.content_type.includes('rss'))) {
             const doc = parserFn(response);
-            console.log(response);
             watchedState.contents.feeds.unshift(createFeeds(doc));
             watchedState.contents.posts = [
               ...createPosts(doc, uniqueId),
@@ -160,9 +160,7 @@ export default () => {
           if (err.message === 'timeout of 10000ms exceeded') {
             watchedState.errors = 'errorMessage.timeout';
           } else {
-            console.log(err);
             const { message } = err;
-            console.log(message);
             watchedState.errors = message;
           }
           watchedState.status = 'filling';
