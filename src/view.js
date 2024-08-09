@@ -104,7 +104,7 @@ export default (elements, state, i18n) => {
   };
 
   const handleErrors = () => {
-    if (!state.errors.url) {
+    if (state.errors.length === 0) {
       input.classList.remove('is-invalid');
       feedback.classList.remove('text-danger');
       feedback.classList.add('text-success');
@@ -112,7 +112,7 @@ export default (elements, state, i18n) => {
     } else {
       input.classList.add('is-invalid');
       feedback.classList.add('text-danger');
-      feedback.textContent = i18n(state.errors.url);
+      feedback.textContent = i18n(state.errors);
     }
   };
 
