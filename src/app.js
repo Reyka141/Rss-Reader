@@ -26,7 +26,7 @@ const createFeeds = (doc) => {
 const createPosts = (doc, idFn = '') => {
   const items = [...doc.querySelectorAll('item')].map((item) => {
     const title = item.querySelector('title').textContent;
-    const id = idFn === '' ? idFn : idFn();
+    const id = idFn ? idFn() : '';
     const description = item.querySelector('description').textContent;
     const link = item.querySelector('link').textContent;
     return {
@@ -114,7 +114,7 @@ export default () => {
           .then(() => {
             setTime();
           })
-          .catch(() => clearInterval(timerId));
+          .catch(() => clearTimeout(timerId));
       }, 5000);
     };
     setTime();
