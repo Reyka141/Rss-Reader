@@ -21,7 +21,7 @@ export default (elements, state, i18n) => {
     return titleDiv;
   };
 
-  const createPosts = (items) => {
+  const generatePostElements = (items) => {
     const arrOFList = items.map((item) => {
       const li = document.createElement('li');
       li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
@@ -63,7 +63,7 @@ export default (elements, state, i18n) => {
     return arrOFList;
   };
 
-  const createFeeds = (data) => {
+  const generateFeedElements = (data) => {
     const li = document.createElement('li');
     li.classList.add('list-group-item', 'border-0', 'border-end-0');
 
@@ -92,7 +92,7 @@ export default (elements, state, i18n) => {
     const ul = document.createElement('ul');
     ul.classList.add('list-group', 'border-0', 'rounded-0');
 
-    const postContent = createPosts(state.contents.posts);
+    const postContent = generatePostElements(state.contents.posts);
     postContent.forEach((post) => ul.append(post));
 
     wrapper.append(ul);
@@ -112,7 +112,7 @@ export default (elements, state, i18n) => {
     ul.classList.add('list-group', 'border-0', 'rounded-0');
 
     state.contents.feeds.forEach((content) => {
-      const feedsContent = createFeeds(content);
+      const feedsContent = generateFeedElements(content);
       ul.append(feedsContent);
     });
 
