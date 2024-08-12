@@ -13,5 +13,6 @@ export default {
       title: 'Посты',
       button: 'Просмотр',
     },
+    'Network Error': 'Ошибка сети',
   },
 };
