@@ -1,7 +1,7 @@
 // @ts-check
 
 import './styles.scss';
-import 'bootstrap';
+// import 'bootstrap';
 import app from './app.js';
 
 app();
