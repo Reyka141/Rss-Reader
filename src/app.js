@@ -58,7 +58,7 @@ export default () => {
   const defaultLang = 'ru';
 
   const state = {
-    status: 'filling', // 'sending', 'sent', 'error'
+    status: 'filling', // 'sending'
     valid: false,
     errors: '',
     loadedFeeds: [],
