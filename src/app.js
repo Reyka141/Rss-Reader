@@ -140,8 +140,12 @@ export default () => {
           });
         })
         .then((response) => {
-          if (response.data.status.http_code === 200 && (response.data.status.content_type.includes('xml') || response.data.status.content_type.includes('rss'))) {
+          if (response.status === 200) {
             const doc = parserFn(response);
+            const parserError = doc.querySelector('parsererror');
+            if (parserError) {
+              throw new Error('errorMessage.urlInValid');
+            }
             watchedState.contents.feeds.unshift(createFeeds(doc));
             watchedState.contents.posts = [
               ...createPosts(doc, uniqueId),
@@ -151,8 +155,7 @@ export default () => {
             watchedState.loadedFeeds.push(newRss.url);
             watchedState.valid = true;
           } else {
-            const error = 'errorMessage.urlInValid';
-            watchedState.errors = error;
+            throw new Error('errorMessage.urlInValid');
           }
           watchedState.status = 'filling';
         })
