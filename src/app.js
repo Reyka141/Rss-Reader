@@ -4,39 +4,13 @@ import axios from 'axios';
 import uniqueId from 'lodash/uniqueId.js';
 import watch from './view.js';
 import resources from './locales/index.js';
+import parserFn from './parser.js';
 
-const routes = {
-  rssPath: (url) => `https://allorigins.hexlet.app/get?disableCache=true&url=${url}`,
-};
-
-const parserFn = (response) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(response.data.contents, 'application/xml');
-  return doc;
-};
-
-const createFeeds = (doc) => {
-  const obj = {
-    title: doc.querySelector('title').textContent,
-    description: doc.querySelector('description').textContent,
-  };
-  return obj;
-};
-
-const createPosts = (doc, idFn = '') => {
-  const items = [...doc.querySelectorAll('item')].map((item) => {
-    const title = item.querySelector('title').textContent;
-    const id = idFn ? idFn() : '';
-    const description = item.querySelector('description').textContent;
-    const link = item.querySelector('link').textContent;
-    return {
-      id,
-      title,
-      description,
-      link,
-    };
-  });
-  return items;
+const addProxy = (url) => {
+  const urlWithProxy = new URL('/get', 'https://allorigins.hexlet.app');
+  urlWithProxy.searchParams.set('url', url);
+  urlWithProxy.searchParams.set('disableCache', 'true');
+  return urlWithProxy.toString();
 };
 
 export default () => {
@@ -56,6 +30,7 @@ export default () => {
   };
 
   const defaultLang = 'ru';
+  const fetchInterval = 5000;
 
   const state = {
     status: 'filling',
@@ -91,33 +66,30 @@ export default () => {
       },
     });
     const watchedState = watch(elements, state, t);
-    const setTime = () => {
-      const timerId = setTimeout(() => {
-        const arr = watchedState.loadedFeeds.map((url) => axios.get(routes.rssPath(url)));
-        Promise.all(arr).then((data) => {
-          const idLists = watchedState.contents.posts.map(({ title }) => title);
-          const items = data
-            .flatMap((item) => {
-              const doc = parserFn(item);
-              const arrOfPosts = createPosts(doc);
-              return arrOfPosts;
-            })
-            .filter((item) => !idLists.includes(item.title))
-            .map((item) => {
-              const id = uniqueId();
-              return { ...item, id };
-            });
-          if (items.length > 0) {
-            watchedState.contents.posts = [...items, ...watchedState.contents.posts];
-          }
-        })
-          .then(() => {
-            setTime();
-          })
-          .catch(() => clearTimeout(timerId));
-      }, 5000);
+
+    const getNewPosts = () => {
+      const idLists = watchedState.contents.posts.map(({ title }) => title);
+      const arr = watchedState.loadedFeeds.map((url) => {
+        const result = axios.get(addProxy(url))
+          .then((data) => {
+            const [, arrOfPosts] = parserFn(data);
+            const newPosts = arrOfPosts
+              .filter((item) => !idLists.includes(item.title))
+              .map((item) => {
+                const id = uniqueId();
+                return { ...item, id };
+              });
+            if (newPosts.length > 0) {
+              watchedState.contents.posts = [...newPosts, ...watchedState.contents.posts];
+            }
+          });
+        return result;
+      });
+      Promise.all(arr).finally(() => {
+        setTimeout(() => getNewPosts(), fetchInterval);
+      });
     };
-    setTime();
+    getNewPosts();
 
     elements.btnSubmit.addEventListener('click', (e) => {
       e.preventDefault();
@@ -135,20 +107,16 @@ export default () => {
       schema.validate(newRss, { abortEarly: false })
         .then(() => {
           watchedState.status = 'sending';
-          return axios.get(routes.rssPath(newRss.url), {
+          return axios.get(addProxy(newRss.url), {
             timeout: 5000,
           });
         })
         .then((response) => {
           if (response.status === 200) {
-            const doc = parserFn(response);
-            const parserError = doc.querySelector('parsererror');
-            if (parserError) {
-              throw new Error('errorMessage.urlInValid');
-            }
-            watchedState.contents.feeds.unshift(createFeeds(doc));
+            const [feeds, posts] = parserFn(response, uniqueId);
+            watchedState.contents.feeds.unshift(feeds);
             watchedState.contents.posts = [
-              ...createPosts(doc, uniqueId),
+              ...posts,
               ...watchedState.contents.posts,
             ];
             watchedState.errors = [];
@@ -160,7 +128,7 @@ export default () => {
           watchedState.status = 'filling';
         })
         .catch((err) => {
-          if (err.message === 'timeout of 10000ms exceeded') {
+          if (err.message === 'timeout of 5000ms exceeded') {
             watchedState.errors = 'errorMessage.timeout';
           } else {
             const { message } = err;
