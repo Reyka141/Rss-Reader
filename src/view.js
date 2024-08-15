@@ -45,17 +45,6 @@ export default (elements, state, i18n) => {
       btn.setAttribute('data-bs-toggle', 'modal');
       btn.setAttribute('data-bs-target', '#modal');
       btn.textContent = i18n('posts.button');
-      btn.addEventListener('click', () => {
-        postVisited.push(item.id);
-        // eslint-disable-next-line no-use-before-define
-        watchedState.modalIcon.title = item.title;
-        // eslint-disable-next-line no-use-before-define
-        watchedState.modalIcon.description = item.description;
-        // eslint-disable-next-line no-use-before-define
-        watchedState.modalIcon.href = item.link;
-        // eslint-disable-next-line no-use-before-define
-        watchedState.modalIcon.idPost = item.id;
-      });
 
       li.append(a, btn);
       return li;
