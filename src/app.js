@@ -137,5 +137,18 @@ export default () => {
           watchedState.status = 'filling';
         });
     });
+    elements.posts.addEventListener('click', (e) => {
+      if (e.target.classList.contains('btn')) {
+        const targetId = e.target.dataset.id;
+        state.contents.posts.forEach((post) => {
+          if (post.id === targetId) {
+            state.modalIcon.title = post.title;
+            state.modalIcon.description = post.description;
+            state.modalIcon.href = post.link;
+            watchedState.modalIcon.idPost = post.id;
+          }
+        });
+      }
+    });
   });
 };
