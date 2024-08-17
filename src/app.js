@@ -13,7 +13,7 @@ const addProxy = (url) => {
   return urlWithProxy.toString();
 };
 
-export default () => {
+export default async () => {
   const elements = {
     form: document.querySelector('.rss-form'),
     input: document.querySelector('#url-input'),
@@ -51,104 +51,103 @@ export default () => {
   };
 
   const i18n = i18next.createInstance();
-  i18n.init({
+  await i18n.init({
     lng: defaultLang,
     debug: false,
     resources,
-  }).then((t) => {
-    yup.setLocale({
-      mixed: {
-        required: 'errorMessage.required',
-        notOneOf: 'errorMessage.urlNotOneOf',
-      },
-      string: {
-        url: 'errorMessage.url',
-      },
-    });
-    const watchedState = watch(elements, state, t);
+  });
 
-    const getNewPosts = () => {
-      const idLists = watchedState.contents.posts.map(({ title }) => title);
-      const arr = watchedState.loadedFeeds.map((url) => {
-        const result = axios.get(addProxy(url))
-          .then((data) => {
-            const [, arrOfPosts] = parserFn(data);
-            const newPosts = arrOfPosts
-              .filter((item) => !idLists.includes(item.title))
-              .map((item) => {
-                const id = uniqueId();
-                return { ...item, id };
-              });
-            if (newPosts.length > 0) {
-              watchedState.contents.posts = [...newPosts, ...watchedState.contents.posts];
-            }
-          });
-        return result;
-      });
-      Promise.all(arr).finally(() => {
-        setTimeout(() => getNewPosts(), fetchInterval);
-      });
-    };
-    getNewPosts();
+  yup.setLocale({
+    mixed: {
+      required: 'errorMessage.required',
+      notOneOf: 'errorMessage.urlNotOneOf',
+    },
+    string: {
+      url: 'errorMessage.url',
+    },
+  });
 
-    elements.btnSubmit.addEventListener('click', (e) => {
-      e.preventDefault();
+  const watchedState = watch(elements, state, i18n);
 
-      const schema = yup.object().shape({
-        url: yup.string()
-          .required()
-          .url()
-          .notOneOf(watchedState.loadedFeeds),
-      });
-
-      const formData = new FormData(elements.form);
-      const newRss = Object.fromEntries(formData);
-
-      schema.validate(newRss, { abortEarly: false })
-        .then(() => {
-          watchedState.status = 'sending';
-          return axios.get(addProxy(newRss.url), {
-            timeout: 5000,
-          });
-        })
-        .then((response) => {
-          if (response.status === 200) {
-            const [feeds, posts] = parserFn(response, uniqueId);
-            watchedState.contents.feeds.unshift(feeds);
-            watchedState.contents.posts = [
-              ...posts,
-              ...watchedState.contents.posts,
-            ];
-            watchedState.errors = [];
-            watchedState.loadedFeeds.push(newRss.url);
-            watchedState.valid = true;
-          } else {
-            throw new Error('errorMessage.urlInValid');
-          }
-          watchedState.status = 'filling';
-        })
-        .catch((err) => {
-          if (err.message === 'timeout of 5000ms exceeded') {
-            watchedState.errors = 'errorMessage.timeout';
-          } else {
-            const { message } = err;
-            watchedState.errors = message;
-          }
-          watchedState.status = 'filling';
+  const getNewPosts = () => {
+    const idLists = watchedState.contents.posts.map(({ title }) => title);
+    const arr = watchedState.loadedFeeds.map(async (url) => {
+      const data = await axios.get(addProxy(url));
+      const [, arrOfPosts] = parserFn(data);
+      const newPosts = arrOfPosts
+        .filter((item) => !idLists.includes(item.title))
+        .map((item) => {
+          const id = uniqueId();
+          return { ...item, id };
         });
-    });
-    elements.posts.addEventListener('click', (e) => {
-      if (e.target.classList.contains('btn')) {
-        const targetId = e.target.dataset.id;
-        state.contents.posts.forEach((post) => {
-          if (post.id === targetId) {
-            state.modalIcon.title = post.title;
-            state.modalIcon.description = post.description;
-            state.modalIcon.href = post.link;
-            watchedState.modalIcon.idPost = post.id;
-          }
-        });
+      if (newPosts.length > 0) {
+        watchedState.contents.posts = [...newPosts, ...watchedState.contents.posts];
       }
+      return data;
     });
+    Promise.all(arr).finally(() => {
+      setTimeout(() => getNewPosts(), fetchInterval);
+    });
+  };
+  getNewPosts();
+
+  elements.btnSubmit.addEventListener('click', async (e) => {
+    e.preventDefault();
+
+    const schema = yup.object().shape({
+      url: yup.string()
+        .required()
+        .url()
+        .notOneOf(watchedState.loadedFeeds),
+    });
+
+    const formData = new FormData(elements.form);
+    const newRss = Object.fromEntries(formData);
+    try {
+      await schema.validate(newRss, { abortEarly: false });
+
+      watchedState.status = 'sending';
+
+      const response = await axios.get(addProxy(newRss.url), {
+        timeout: 5000,
+      });
+
+      if (response.status === 200) {
+        const [feeds, posts] = parserFn(response, uniqueId);
+        watchedState.contents.feeds.unshift(feeds);
+        watchedState.contents.posts = [
+          ...posts,
+          ...watchedState.contents.posts,
+        ];
+        watchedState.errors = [];
+        watchedState.loadedFeeds.push(newRss.url);
+        watchedState.valid = true;
+      } else {
+        throw new Error('errorMessage.urlInValid');
+      }
+
+      watchedState.status = 'filling';
+    } catch (err) {
+      if (err.message === 'timeout of 5000ms exceeded') {
+        watchedState.errors = 'errorMessage.timeout';
+      } else {
+        const { message } = err;
+        watchedState.errors = message;
+      }
+      watchedState.status = 'filling';
+    }
+  });
+  elements.posts.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn')) {
+      const targetId = e.target.dataset.id;
+      state.contents.posts.forEach((post) => {
+        if (post.id === targetId) {
+          state.modalIcon.title = post.title;
+          state.modalIcon.description = post.description;
+          state.modalIcon.href = post.link;
+          watchedState.modalIcon.idPost = post.id;
+        }
+      });
+    }
   });
 };
