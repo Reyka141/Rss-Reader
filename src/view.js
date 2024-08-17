@@ -15,7 +15,7 @@ export default (elements, state, i18n) => {
 
     const title = document.createElement('h2');
     title.classList.add('card-title', 'h4');
-    title.textContent = i18n(textCode);
+    title.textContent = i18n.t(textCode);
 
     titleDiv.append(title);
     return titleDiv;
@@ -44,7 +44,7 @@ export default (elements, state, i18n) => {
       btn.setAttribute('data-id', item.id);
       btn.setAttribute('data-bs-toggle', 'modal');
       btn.setAttribute('data-bs-target', '#modal');
-      btn.textContent = i18n('posts.button');
+      btn.textContent = i18n.t('posts.button');
 
       li.append(a, btn);
       return li;
@@ -114,11 +114,11 @@ export default (elements, state, i18n) => {
       input.classList.remove('is-invalid');
       feedback.classList.remove('text-danger');
       feedback.classList.add('text-success');
-      feedback.textContent = i18n('errorMessage.urlValid');
+      feedback.textContent = i18n.t('errorMessage.urlValid');
     } else {
       input.classList.add('is-invalid');
       feedback.classList.add('text-danger');
-      feedback.textContent = i18n(state.errors);
+      feedback.textContent = i18n.t(state.errors);
     }
   };
 
